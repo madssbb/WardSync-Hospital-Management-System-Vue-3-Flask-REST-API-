@@ -1,0 +1,203 @@
+openapi: 3.0.0
+info:
+  title: Hospital Management System API
+  description: API documentation for the Hospital Management System V2. Includes routes for Authentication, Admin, Doctor, and Patient roles.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new patient
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                name:
+                  type: string
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Username already exists
+
+  /auth/login:
+    post:
+      summary: Authenticate user and receive JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  user:
+                    type: object
+        '401':
+          description: Invalid credentials or account suspended
+
+  /admin/dashboard:
+    get:
+      summary: Get general metrics for admin dashboard
+      responses:
+        '200':
+          description: Returns stats over the hospital
+  
+  /admin/users:
+    get:
+      summary: List all users globally
+      responses:
+        '200':
+          description: Returns an array of users and roles
+  
+  /admin/users/{id}/toggle-status:
+    put:
+      summary: Suspend or activate a user account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User status updated
+  
+  /admin/doctors:
+    post:
+      summary: Add a new professional doctor
+      responses:
+        '201':
+          description: Doctor created successfully
+
+  /doctor/profile:
+    get:
+      summary: Get information of the logged-in doctor
+      responses:
+        '200':
+          description: Returns doctor profile properties
+
+  /doctor/availability:
+    get:
+      summary: Fetch slots submitted by the doctor
+      responses:
+        '200':
+          description: Array of booked and open time slots
+    post:
+      summary: Upload new availability timeslots
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                slots:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '201':
+          description: Slots created
+
+  /doctor/appointments:
+    get:
+      summary: Get list of patient appointments mapped to this doctor
+      responses:
+        '200':
+          description: Appointments Data Array
+
+  /doctor/appointments/{id}/treatment:
+    post:
+      summary: Log treatment diagnosis after successful appointment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Treatment recorded, appointment closed
+
+  /patient/doctors:
+    get:
+      summary: Search and find available doctors
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: specialization_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Filtered list of doctors and unbooked slots
+
+  /patient/book:
+    post:
+      summary: Book an available timeslot
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                slot_id:
+                  type: integer
+      responses:
+        '201':
+          description: Appointment Confirmed
+
+  /patient/appointments:
+    get:
+      summary: Get booking history of logged-in patient
+      responses:
+        '200':
+          description: Appointment and treatment arrays
+
+  /patient/export:
+    post:
+      summary: Dispatch an asynchronous background export job for CSV history
+      responses:
+        '200':
+          description: Background task triggered and alerted
